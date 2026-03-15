@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { motion, useTransform, useSpring, useMotionValue } from "framer-motion";
+import { motion, useTransform, useSpring, useMotionValue, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { Waitlist } from "@/components/waitlist";
 
 // --- Types ---
 export type AnimationPhase = "scatter" | "line" | "circle" | "bottom-strip";
@@ -256,10 +257,22 @@ export default function IntroAnimation() {
         };
     }, [smoothMorph, smoothScrollRotate, smoothMouseX]);
 
-    // --- Content Opacity ---
-    // Fade in content when arc is formed (morphValue > 0.8)
-    const contentOpacity = useTransform(smoothMorph, [0.8, 1], [0, 1]);
-    const contentY = useTransform(smoothMorph, [0.8, 1], [20, 0]);
+    // --- Fade in Waitlist ---
+    // At the end of MAX_SCROLL (e.g., last 500px), fade in the waitlist
+    const waitlistOpacity = useTransform(smoothScrollRotate, [280, 360], [0, 1]);
+    const waitlistY = useTransform(smoothScrollRotate, [280, 360], [50, 0]);
+    // Also fade out the active content to make room for waitlist
+    const contentOpacity = useTransform(
+        smoothScrollRotate,
+        [0, 250, 280], // Start to fade out when waitlist is about to appear
+        [1, 1, 0]
+    );
+
+    // Initial fade in logic from the morph still applies, so we combine:
+    // Actually, morph logic uses morphValue > 0.8
+    // So let's handle visibility with Framer Motion variants or simpler logic:
+    const showContent = morphValue > 0.8 && rotateValue < 260;
+    const showWaitlist = rotateValue >= 260;
 
     return (
         <div ref={containerRef} className={cn("relative w-full h-full bg-[#FAFAFA] overflow-hidden")}>
@@ -286,18 +299,40 @@ export default function IntroAnimation() {
                     </motion.p>
                 </div>
 
-                {/* Arc Active Content (Fades in) */}
-                <motion.div
-                    style={{ opacity: contentOpacity, y: contentY }}
-                    className="absolute top-[10%] z-10 flex flex-col items-center justify-center text-center pointer-events-none px-4"
-                >
-                    <h2 className="mb-4 text-3xl font-semibold tracking-tight text-gray-900 md:text-5xl">
-                        plug in, walk out
-                    </h2>
-                    <p className="max-w-lg text-sm leading-relaxed text-gray-600 md:text-base">
-                        Raah turns your walk, run, ride or commute into a living conversation—narrating the world around you as you move through it
-                    </p>
-                </motion.div>
+                {/* Arc Active Content / Waitlist Wrapper */}
+                <AnimatePresence>
+                    {showContent && (
+                        <motion.div
+                            key="content"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.5 }}
+                            className="absolute top-[10%] md:top-[15%] z-20 flex flex-col items-center justify-center text-center px-4"
+                        >
+                            <h2 className="mb-4 text-3xl font-semibold tracking-tight text-gray-900 md:text-5xl">
+                                plug in, walk out
+                            </h2>
+                            <p className="max-w-lg text-sm leading-relaxed text-gray-600 md:text-base">
+                                Raah turns your walk, run, ride or commute into a living conversation—narrating the world around you as you move through it
+                            </p>
+                        </motion.div>
+                    )}
+
+                    {showWaitlist && (
+                        <motion.div
+                            key="waitlist"
+                            initial={{ opacity: 0, y: 50 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 50 }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                            className="absolute w-full px-4 z-30"
+                            style={{ top: "15%" }}
+                        >
+                            <Waitlist />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Main Container */}
                 <div className="relative flex items-center justify-center w-full h-full">
