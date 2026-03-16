@@ -232,13 +232,16 @@ export default function IntroAnimation() {
 
     // --- Random Scatter Positions ---
     const scatterPositions = useMemo(() => {
-        return IMAGES.map(() => ({
-            x: (Math.random() - 0.5) * 1500,
-            y: (Math.random() - 0.5) * 1000,
-            rotation: (Math.random() - 0.5) * 180,
-            scale: 0.6,
-            opacity: 0,
-        }));
+        return IMAGES.map(() => {
+            const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+            return {
+                x: (Math.random() - 0.5) * (isMobile ? 800 : 1500),
+                y: (Math.random() - 0.5) * (isMobile ? 600 : 1000),
+                rotation: (Math.random() - 0.5) * 180,
+                scale: isMobile ? 0.4 : 0.6,
+                opacity: 0,
+            };
+        });
     }, []);
 
     // --- Render Loop (Manual Calculation for Morph) ---
@@ -355,7 +358,7 @@ export default function IntroAnimation() {
                             const minDimension = Math.min(containerSize.width, containerSize.height);
 
                             // A. Calculate Circle Position
-                            const circleRadius = Math.min(minDimension * 0.35, 350);
+                            const circleRadius = Math.min(minDimension * (isMobile ? 0.45 : 0.35), 350);
 
                             const circleAngle = (i / TOTAL_IMAGES) * 360;
                             const circleRad = (circleAngle * Math.PI) / 180;
@@ -363,6 +366,7 @@ export default function IntroAnimation() {
                                 x: Math.cos(circleRad) * circleRadius,
                                 y: Math.sin(circleRad) * circleRadius,
                                 rotation: circleAngle + 90,
+                                scale: isMobile ? 0.5 : 1 // Add a scale down for the circle on mobile
                             };
 
                             // B. Calculate Bottom Arc Position
@@ -392,7 +396,7 @@ export default function IntroAnimation() {
                                 x: Math.cos(arcRad) * arcRadius + parallaxValue,
                                 y: Math.sin(arcRad) * arcRadius + arcCenterY,
                                 rotation: currentArcAngle + 90,
-                                scale: isMobile ? 1.4 : 1.8, // Increased scale for active state
+                                scale: isMobile ? 0.8 : 1.8, // Reduced scale for active state on mobile
                             };
 
                             // C. Interpolate (Morph)
@@ -400,7 +404,7 @@ export default function IntroAnimation() {
                                 x: lerp(circlePos.x, arcPos.x, morphValue),
                                 y: lerp(circlePos.y, arcPos.y, morphValue),
                                 rotation: lerp(circlePos.rotation, arcPos.rotation, morphValue),
-                                scale: lerp(1, arcPos.scale, morphValue),
+                                scale: lerp(circlePos.scale, arcPos.scale, morphValue), // interpolate from circle scale instead of 1
                                 opacity: 1,
                             };
                         }
