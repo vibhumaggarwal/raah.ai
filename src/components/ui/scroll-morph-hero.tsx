@@ -160,10 +160,13 @@ export default function IntroAnimation() {
 
         if (isMobile) {
             // Mobile: Automatically animate the scroll timeline instead of hijacking touch
-            const controls = animate(virtualScroll, MAX_SCROLL, {
+            // We use keyframes to make the first phase (0-600, the morph) slower (taking 60% of time)
+            // and the remaining rotation phase (600-MAX_SCROLL) faster (taking 40% of time)
+            const controls = animate(virtualScroll, [0, 600, MAX_SCROLL], {
                 duration: 12,
+                times: [0, 0.6, 1], // 0s, 7.2s, 12s
                 delay: 2.5, // wait for intro to finish before sliding
-                ease: "linear",
+                ease: ["easeInOut", "easeIn"], // easeInOut for morph, easeIn for rotation to waitlist
             });
             return () => controls.stop();
         }
