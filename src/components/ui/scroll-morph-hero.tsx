@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { motion, useTransform, useSpring, useMotionValue, AnimatePresence } from "framer-motion";
+import { motion, useTransform, useSpring, useMotionValue, AnimatePresence, animate } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Waitlist } from "@/components/waitlist";
 
@@ -156,6 +156,18 @@ export default function IntroAnimation() {
         const container = containerRef.current;
         if (!container) return;
 
+        const isMobile = window.innerWidth < 768;
+
+        if (isMobile) {
+            // Mobile: Automatically animate the scroll timeline instead of hijacking touch
+            const controls = animate(virtualScroll, MAX_SCROLL, {
+                duration: 12,
+                delay: 2.5, // wait for intro to finish before sliding
+                ease: "linear",
+            });
+            return () => controls.stop();
+        }
+
         const handleWheel = (e: WheelEvent) => {
             // Prevent default to stop browser overscroll/bounce
             e.preventDefault();
@@ -165,7 +177,7 @@ export default function IntroAnimation() {
             virtualScroll.set(newScroll);
         };
 
-        // Touch support
+        // Touch support (Desktop emulation or non-mobile screens that have touch)
         let touchStartY = 0;
         const handleTouchStart = (e: TouchEvent) => {
             touchStartY = e.touches[0].clientY;
